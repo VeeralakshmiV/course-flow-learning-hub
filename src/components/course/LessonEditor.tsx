@@ -19,10 +19,12 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
   const [title, setTitle] = useState(lesson?.title || "");
   const [content, setContent] = useState(lesson?.content || "");
   const [activeTab, setActiveTab] = useState("edit");
-  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
+  const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
-  const [urlType, setUrlType] = useState<"link" | "image" | "video" | "pdf">("link");
+  const [mediaType, setMediaType] = useState<"link" | "image" | "video" | "pdf">("link");
+  const [insertMode, setInsertMode] = useState<"url" | "upload">("url");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onSave({
@@ -51,20 +53,24 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
         newText = `\n- ${selectedText || 'list item'}\n`;
         break;
       case 'link':
-        setUrlType("link");
-        setIsUrlDialogOpen(true);
+        setMediaType("link");
+        setInsertMode("url");
+        setIsMediaDialogOpen(true);
         return;
       case 'image':
-        setUrlType("image");
-        setIsUrlDialogOpen(true);
+        setMediaType("image");
+        setInsertMode("url");
+        setIsMediaDialogOpen(true);
         return;
       case 'video':
-        setUrlType("video");
-        setIsUrlDialogOpen(true);
+        setMediaType("video");
+        setInsertMode("url");
+        setIsMediaDialogOpen(true);
         return;
       case 'pdf':
-        setUrlType("pdf");
-        setIsUrlDialogOpen(true);
+        setMediaType("pdf");
+        setInsertMode("url");
+        setIsMediaDialogOpen(true);
         return;
       default:
         return;
@@ -87,7 +93,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     const end = textarea?.selectionEnd || content.length;
     
     let insertText = "";
-    switch (urlType) {
+    switch (mediaType) {
       case 'link':
         insertText = `[Link Text](${urlInput})`;
         break;
@@ -105,7 +111,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     const newContent = content.substring(0, start) + insertText + content.substring(end);
     setContent(newContent);
     setUrlInput("");
-    setIsUrlDialogOpen(false);
+    setIsMediaDialogOpen(false);
 
     setTimeout(() => {
       textarea?.focus();
@@ -143,6 +149,27 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     // Clear the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (mediaFileInputRef.current) {
+      mediaFileInputRef.current.value = '';
+    }
+    setIsMediaDialogOpen(false);
+  };
+
+  const handleMediaFileUpload = () => {
+    mediaFileInputRef.current?.click();
+  };
+
+  const getAcceptTypes = () => {
+    switch (mediaType) {
+      case 'image':
+        return 'image/*';
+      case 'video':
+        return 'video/*';
+      case 'pdf':
+        return '.pdf,application/pdf';
+      default:
+        return '*/*';
     }
   };
 
@@ -198,7 +225,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
               </div>
               <div className="pt-4">
                 <Badge variant="secondary" className="mb-2">
-                  Media Upload
+                  Quick Upload
                 </Badge>
                 <input
                   ref={fileInputRef}
@@ -299,7 +326,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                       variant="ghost"
                       onClick={() => insertFormatting('image')}
                       className="p-2"
-                      title="Insert Image URL"
+                      title="Insert Image"
                     >
                       <Image className="h-4 w-4" />
                     </Button>
@@ -308,7 +335,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                       variant="ghost"
                       onClick={() => insertFormatting('video')}
                       className="p-2"
-                      title="Insert Video URL"
+                      title="Insert Video"
                     >
                       <Video className="h-4 w-4" />
                     </Button>
@@ -317,7 +344,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                       variant="ghost"
                       onClick={() => insertFormatting('pdf')}
                       className="p-2"
-                      title="Insert PDF URL"
+                      title="Insert PDF"
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
@@ -339,7 +366,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
 
                   <div className="text-sm text-gray-500 space-y-2">
                     <p>💡 Use the toolbar buttons to insert images, videos, PDFs, and links into your content.</p>
-                    <p>📁 Upload files directly using the "Upload File" button in the sidebar.</p>
+                    <p>📁 Upload files directly using the "Quick Upload" button or choose URL/Upload in the media dialogs.</p>
                   </div>
                 </TabsContent>
 
@@ -358,42 +385,98 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
         </div>
       </div>
 
-      {/* URL/Media Insert Dialog */}
-      <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
-        <DialogContent>
+      {/* Enhanced Media Insert Dialog */}
+      <Dialog open={isMediaDialogOpen} onOpenChange={setIsMediaDialogOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Insert {urlType === 'link' ? 'Link' : urlType === 'image' ? 'Image' : urlType === 'video' ? 'Video' : 'PDF'}
+              Insert {mediaType === 'link' ? 'Link' : mediaType === 'image' ? 'Image' : mediaType === 'video' ? 'Video' : 'PDF'}
             </DialogTitle>
             <DialogDescription>
-              Enter the URL for the {urlType} you want to insert.
+              Choose to enter a URL or upload a file for your {mediaType}.
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4">
-            <Input
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder={`Enter ${urlType} URL...`}
-              autoFocus
-            />
-            {urlType === 'video' && (
-              <p className="text-sm text-gray-500">
-                Supported formats: MP4, WebM, OGG
-              </p>
+            {/* Toggle between URL and Upload */}
+            <div className="flex gap-2">
+              <Button
+                variant={insertMode === "url" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setInsertMode("url")}
+                className="flex-1"
+              >
+                <Link className="h-4 w-4 mr-2" />
+                Enter URL
+              </Button>
+              <Button
+                variant={insertMode === "upload" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setInsertMode("upload")}
+                className="flex-1"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload File
+              </Button>
+            </div>
+
+            {insertMode === "url" && (
+              <div>
+                <Input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder={`Enter ${mediaType} URL...`}
+                  autoFocus
+                />
+                {mediaType === 'video' && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Supported formats: MP4, WebM, OGG
+                  </p>
+                )}
+                {mediaType === 'pdf' && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Enter a direct link to a PDF file
+                  </p>
+                )}
+              </div>
             )}
-            {urlType === 'pdf' && (
-              <p className="text-sm text-gray-500">
-                Enter a direct link to a PDF file
-              </p>
+
+            {insertMode === "upload" && (
+              <div className="text-center">
+                <input
+                  ref={mediaFileInputRef}
+                  type="file"
+                  accept={getAcceptTypes()}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button 
+                  onClick={handleMediaFileUpload}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose {mediaType === 'link' ? 'File' : mediaType} File
+                </Button>
+                <p className="text-sm text-gray-500 mt-2">
+                  {mediaType === 'image' && 'Supported: JPG, PNG, GIF, WebP'}
+                  {mediaType === 'video' && 'Supported: MP4, WebM, MOV, AVI'}
+                  {mediaType === 'pdf' && 'Supported: PDF files only'}
+                  {mediaType === 'link' && 'Any file type'}
+                </p>
+              </div>
             )}
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUrlDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsMediaDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUrlInsert} disabled={!urlInput.trim()}>
-              Insert {urlType === 'link' ? 'Link' : urlType === 'image' ? 'Image' : urlType === 'video' ? 'Video' : 'PDF'}
-            </Button>
+            {insertMode === "url" && (
+              <Button onClick={handleUrlInsert} disabled={!urlInput.trim()}>
+                Insert {mediaType === 'link' ? 'Link' : mediaType === 'image' ? 'Image' : mediaType === 'video' ? 'Video' : 'PDF'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
