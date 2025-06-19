@@ -1,11 +1,11 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, X, Bold, Italic, List, Link, Image, Eye, Edit } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Save, X, Bold, Italic, List, Link, Image, Eye, Edit, FileText, Video, Upload } from "lucide-react";
 import { Lesson } from "@/stores/courseStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -19,6 +19,10 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
   const [title, setTitle] = useState(lesson?.title || "");
   const [content, setContent] = useState(lesson?.content || "");
   const [activeTab, setActiveTab] = useState("edit");
+  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlType, setUrlType] = useState<"link" | "image" | "video" | "pdf">("link");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onSave({
@@ -47,11 +51,21 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
         newText = `\n- ${selectedText || 'list item'}\n`;
         break;
       case 'link':
-        newText = `[${selectedText || 'link text'}](url)`;
-        break;
+        setUrlType("link");
+        setIsUrlDialogOpen(true);
+        return;
       case 'image':
-        newText = `![${selectedText || 'alt text'}](image-url)`;
-        break;
+        setUrlType("image");
+        setIsUrlDialogOpen(true);
+        return;
+      case 'video':
+        setUrlType("video");
+        setIsUrlDialogOpen(true);
+        return;
+      case 'pdf':
+        setUrlType("pdf");
+        setIsUrlDialogOpen(true);
+        return;
       default:
         return;
     }
@@ -59,21 +73,86 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     const newContent = content.substring(0, start) + newText + content.substring(end);
     setContent(newContent);
     
-    // Focus back to textarea
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + newText.length, start + newText.length);
     }, 0);
   };
 
+  const handleUrlInsert = () => {
+    if (!urlInput.trim()) return;
+
+    const textarea = document.getElementById('lesson-content') as HTMLTextAreaElement;
+    const start = textarea?.selectionStart || content.length;
+    const end = textarea?.selectionEnd || content.length;
+    
+    let insertText = "";
+    switch (urlType) {
+      case 'link':
+        insertText = `[Link Text](${urlInput})`;
+        break;
+      case 'image':
+        insertText = `![Image Description](${urlInput})`;
+        break;
+      case 'video':
+        insertText = `\n<video controls width="100%">\n  <source src="${urlInput}" type="video/mp4">\n  Your browser does not support the video tag.\n</video>\n`;
+        break;
+      case 'pdf':
+        insertText = `\n<embed src="${urlInput}" type="application/pdf" width="100%" height="600px" />\n`;
+        break;
+    }
+
+    const newContent = content.substring(0, start) + insertText + content.substring(end);
+    setContent(newContent);
+    setUrlInput("");
+    setIsUrlDialogOpen(false);
+
+    setTimeout(() => {
+      textarea?.focus();
+    }, 0);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // In a real application, you would upload the file to a server
+    // For now, we'll create a local URL for demonstration
+    const fileUrl = URL.createObjectURL(file);
+    const fileName = file.name;
+    const fileType = file.type;
+
+    let insertText = "";
+    if (fileType.startsWith('image/')) {
+      insertText = `![${fileName}](${fileUrl})`;
+    } else if (fileType.startsWith('video/')) {
+      insertText = `\n<video controls width="100%">\n  <source src="${fileUrl}" type="${fileType}">\n  Your browser does not support the video tag.\n</video>\n`;
+    } else if (fileType === 'application/pdf') {
+      insertText = `\n<embed src="${fileUrl}" type="application/pdf" width="100%" height="600px" />\n`;
+    } else {
+      insertText = `[${fileName}](${fileUrl})`;
+    }
+
+    const textarea = document.getElementById('lesson-content') as HTMLTextAreaElement;
+    const start = textarea?.selectionStart || content.length;
+    const end = textarea?.selectionEnd || content.length;
+    
+    const newContent = content.substring(0, start) + insertText + content.substring(end);
+    setContent(newContent);
+
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const renderPreview = () => {
-    // Simple markdown-like preview
     let preview = content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/^- (.+)$/gm, '• $1')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline">$1</a>')
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg" />')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg my-4" />')
       .replace(/\n/g, '<br>');
 
     return { __html: preview };
@@ -119,10 +198,23 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
               </div>
               <div className="pt-4">
                 <Badge variant="secondary" className="mb-2">
-                  WP Editor
+                  Media Upload
                 </Badge>
-                <Button size="sm" variant="outline" className="w-full">
-                  Add Media
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*,.pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload File
                 </Button>
               </div>
             </CardContent>
@@ -146,25 +238,28 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                     </TabsTrigger>
                     <TabsTrigger value="preview" className="flex items-center gap-2">
                       <Eye className="h-4 w-4" />
-                      Text
+                      Preview
                     </TabsTrigger>
                   </TabsList>
                 </div>
 
                 <TabsContent value="edit" className="space-y-4">
-                  {/* Formatting Toolbar */}
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border">
+                  {/* Enhanced Formatting Toolbar */}
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border flex-wrap">
                     <select className="text-sm border rounded px-2 py-1">
                       <option>Paragraph</option>
                       <option>Heading 1</option>
                       <option>Heading 2</option>
                     </select>
                     <div className="w-px h-6 bg-gray-300 mx-2" />
+                    
+                    {/* Text Formatting */}
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => insertFormatting('bold')}
                       className="p-2"
+                      title="Bold"
                     >
                       <Bold className="h-4 w-4" />
                     </Button>
@@ -173,23 +268,29 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                       variant="ghost"
                       onClick={() => insertFormatting('italic')}
                       className="p-2"
+                      title="Italic"
                     >
                       <Italic className="h-4 w-4" />
                     </Button>
-                    <div className="w-px h-6 bg-gray-300 mx-2" />
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => insertFormatting('list')}
                       className="p-2"
+                      title="List"
                     >
                       <List className="h-4 w-4" />
                     </Button>
+                    
+                    <div className="w-px h-6 bg-gray-300 mx-2" />
+                    
+                    {/* Media Insertion */}
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => insertFormatting('link')}
                       className="p-2"
+                      title="Insert Link"
                     >
                       <Link className="h-4 w-4" />
                     </Button>
@@ -198,9 +299,29 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                       variant="ghost"
                       onClick={() => insertFormatting('image')}
                       className="p-2"
+                      title="Insert Image URL"
                     >
                       <Image className="h-4 w-4" />
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => insertFormatting('video')}
+                      className="p-2"
+                      title="Insert Video URL"
+                    >
+                      <Video className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => insertFormatting('pdf')}
+                      className="p-2"
+                      title="Insert PDF URL"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    
                     <div className="ml-auto">
                       <select className="text-sm border rounded px-2 py-1">
                         <option>Tutor ShortCode</option>
@@ -212,13 +333,13 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                     id="lesson-content"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Enter your lesson content here..."
+                    placeholder="Enter your lesson content here. Use the toolbar buttons to add media..."
                     className="min-h-[400px] resize-none"
                   />
 
-                  <div className="text-sm text-gray-500">
-                    💡 The idea of a summary is a short text to prepare students for the activities within the
-                    topic or week. The text is shown on the course page under the topic name.
+                  <div className="text-sm text-gray-500 space-y-2">
+                    <p>💡 Use the toolbar buttons to insert images, videos, PDFs, and links into your content.</p>
+                    <p>📁 Upload files directly using the "Upload File" button in the sidebar.</p>
                   </div>
                 </TabsContent>
 
@@ -236,6 +357,46 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
           </Card>
         </div>
       </div>
+
+      {/* URL/Media Insert Dialog */}
+      <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Insert {urlType === 'link' ? 'Link' : urlType === 'image' ? 'Image' : urlType === 'video' ? 'Video' : 'PDF'}
+            </DialogTitle>
+            <DialogDescription>
+              Enter the URL for the {urlType} you want to insert.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder={`Enter ${urlType} URL...`}
+              autoFocus
+            />
+            {urlType === 'video' && (
+              <p className="text-sm text-gray-500">
+                Supported formats: MP4, WebM, OGG
+              </p>
+            )}
+            {urlType === 'pdf' && (
+              <p className="text-sm text-gray-500">
+                Enter a direct link to a PDF file
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUrlDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUrlInsert} disabled={!urlInput.trim()}>
+              Insert {urlType === 'link' ? 'Link' : urlType === 'image' ? 'Image' : urlType === 'video' ? 'Video' : 'PDF'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
