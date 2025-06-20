@@ -3,23 +3,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Users, BookOpen, GraduationCap, Settings, ChevronRight, Sparkles, Menu, X, Play, Instagram, Star, Award, Clock, CheckCircle } from "lucide-react";
 import AdminDashboard from "@/components/dashboards/AdminDashboard";
 import StaffDashboard from "@/components/dashboards/StaffDashboard";
 import StudentDashboard from "@/components/dashboards/StudentDashboard";
+import TestimonialsSection from "@/components/TestimonialsSection";
 
 type UserRole = 'admin' | 'staff' | 'student' | null;
 
 const Index = () => {
   const [currentRole, setCurrentRole] = useState<UserRole>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   if (currentRole) {
     switch (currentRole) {
@@ -110,6 +105,24 @@ const Index = () => {
       price: "₹15,000",
       rating: 4.7,
       students: 950
+    },
+    {
+      title: "Mobile App Development",
+      description: "Build native and cross-platform mobile applications",
+      duration: "7 months",
+      level: "Intermediate",
+      price: "₹28,000",
+      rating: 4.8,
+      students: 650
+    },
+    {
+      title: "UI/UX Design",
+      description: "Create stunning user interfaces and experiences",
+      duration: "5 months",
+      level: "Beginner",
+      price: "₹20,000",
+      rating: 4.6,
+      students: 750
     }
   ];
 
@@ -235,14 +248,9 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Hero Section with Parallax */}
+      {/* Hero Section */}
       <section id="home" className="relative pt-20 pb-32 overflow-hidden">
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            transform: `translateY(${scrollY * 0.5}px)`
-          }}
-        >
+        <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/10 to-gray-900"></div>
         </div>
         
@@ -337,13 +345,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Stats Section with Parallax */}
-      <section 
-        className="py-20 relative overflow-hidden"
-        style={{
-          transform: `translateY(${scrollY * 0.3}px)`
-        }}
-      >
+      {/* Stats Section */}
+      <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -405,7 +408,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Courses Section */}
+      {/* Courses Section with Carousel */}
       <section id="courses" className="py-20 bg-gray-900 relative">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
@@ -417,56 +420,67 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course, index) => (
-              <Card 
-                key={index} 
-                className="group hover:shadow-2xl transition-all duration-700 border-gray-700 bg-gray-800/50 backdrop-blur-sm overflow-hidden transform hover:scale-105 hover:-translate-y-2"
-                style={{
-                  animationDelay: `${index * 200}ms`
-                }}
-              >
-                <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:h-3 transition-all duration-300"></div>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                      {course.level}
-                    </Badge>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-300">{course.rating}</span>
-                    </div>
-                  </div>
-                  <CardTitle className="group-hover:text-blue-400 transition-colors text-white text-xl">
-                    {course.title}
-                  </CardTitle>
-                  <CardDescription className="text-gray-300">
-                    {course.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">Duration:</span>
-                      <span className="font-medium text-white">{course.duration}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">Students:</span>
-                      <span className="font-medium text-white">{course.students}+</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{course.price}</span>
-                      <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-500/25">
-                        Enroll Now
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="max-w-7xl mx-auto">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {courses.map((course, index) => (
+                  <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                    <Card className="group hover:shadow-2xl transition-all duration-700 border-gray-700 bg-gray-800/50 backdrop-blur-sm overflow-hidden transform hover:scale-105 hover:-translate-y-2 h-full">
+                      <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:h-3 transition-all duration-300"></div>
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                            {course.level}
+                          </Badge>
+                          <div className="flex items-center space-x-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm text-gray-300">{course.rating}</span>
+                          </div>
+                        </div>
+                        <CardTitle className="group-hover:text-blue-400 transition-colors text-white text-xl">
+                          {course.title}
+                        </CardTitle>
+                        <CardDescription className="text-gray-300">
+                          {course.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4 mb-6">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Duration:</span>
+                            <span className="font-medium text-white">{course.duration}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Students:</span>
+                            <span className="font-medium text-white">{course.students}+</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{course.price}</span>
+                            <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-500/25">
+                              Enroll Now
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex -left-12 bg-gray-800/80 border-gray-700 text-white hover:bg-gray-700" />
+              <CarouselNext className="hidden md:flex -right-12 bg-gray-800/80 border-gray-700 text-white hover:bg-gray-700" />
+            </Carousel>
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-blue-600/20 to-purple-600/20 relative overflow-hidden">
