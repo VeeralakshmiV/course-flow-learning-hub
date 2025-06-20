@@ -1,10 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Users, BookOpen, GraduationCap, Settings, ChevronRight, Sparkles, Menu, X, Play, Instagram, Star, Award, Clock, CheckCircle } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { Users, BookOpen, GraduationCap, Settings, ChevronRight, Sparkles, Menu, X, Play, Instagram, Star, Award, Clock, CheckCircle, ChevronDown, Shield, UserCheck } from "lucide-react";
 import AdminDashboard from "@/components/dashboards/AdminDashboard";
 import StaffDashboard from "@/components/dashboards/StaffDashboard";
 import StudentDashboard from "@/components/dashboards/StudentDashboard";
@@ -147,96 +153,170 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-gray-900/95 backdrop-blur-md border-b border-gray-800 z-50">
+      {/* Enhanced Navigation */}
+      <nav className="fixed top-0 w-full bg-gray-900/95 backdrop-blur-xl border-b border-gray-800/50 z-50 shadow-2xl shadow-blue-500/10">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-3 animate-fade-in">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center transform hover:scale-110 transition-transform duration-300">
-                <BookOpen className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-between h-20">
+            {/* Enhanced Logo */}
+            <div className="flex items-center space-x-4 animate-fade-in group">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-600 to-blue-700 rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-blue-500/30">
+                  <BookOpen className="h-7 w-7 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse"></div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                AlphaFly Computer Education
-              </span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-600 bg-clip-text text-transparent">
+                  AlphaFly
+                </span>
+                <span className="text-xs text-gray-400 font-medium tracking-wider">Computer Education</span>
+              </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#home" className="text-gray-300 hover:text-blue-400 transition-all duration-300 relative group">
-                Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="#courses" className="text-gray-300 hover:text-blue-400 transition-all duration-300 relative group">
-                Courses
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="#about" className="text-gray-300 hover:text-blue-400 transition-all duration-300 relative group">
-                About
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="#contact" className="text-gray-300 hover:text-blue-400 transition-all duration-300 relative group">
-                Contact
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
-              </a>
+            {/* Enhanced Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-8">
+              <div className="flex items-center space-x-8">
+                {['Home', 'Courses', 'About', 'Contact'].map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase()}`}
+                    className="relative text-gray-300 hover:text-white transition-all duration-300 group px-3 py-2 rounded-lg hover:bg-gray-800/50"
+                  >
+                    <span className="relative z-10 font-medium">{item}</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 rounded-lg transition-all duration-300"></div>
+                  </a>
+                ))}
+              </div>
               
-              {/* Login Portals */}
+              {/* Enhanced Login Portals */}
               <div className="flex items-center space-x-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentRole('admin')}
-                  className="border-blue-500 text-blue-400 hover:bg-blue-500/10 hover:scale-105 transition-all duration-300"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin/Staff Login
-                </Button>
+                {/* Admin/Staff Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="group border-blue-500/50 text-blue-400 hover:bg-blue-500/20 hover:border-blue-400 hover:scale-105 transition-all duration-300 bg-gray-800/50 backdrop-blur-sm shadow-lg shadow-blue-500/20"
+                    >
+                      <Shield className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                      Admin/Staff
+                      <ChevronDown className="h-4 w-4 ml-2 group-hover:rotate-180 transition-transform duration-300" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-56 bg-gray-800/95 backdrop-blur-xl border-gray-700/50 shadow-2xl shadow-blue-500/10"
+                    align="end"
+                  >
+                    <DropdownMenuItem 
+                      onClick={() => setCurrentRole('admin')}
+                      className="flex items-center space-x-3 p-3 hover:bg-blue-500/20 focus:bg-blue-500/20 cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                        <Settings className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-white">Admin Portal</span>
+                        <span className="text-xs text-gray-400">Full system access</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-gray-700/50" />
+                    <DropdownMenuItem 
+                      onClick={() => setCurrentRole('staff')}
+                      className="flex items-center space-x-3 p-3 hover:bg-green-500/20 focus:bg-green-500/20 cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                        <UserCheck className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-white">Staff Portal</span>
+                        <span className="text-xs text-gray-400">Course management</span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Student Portal Button */}
                 <Button
                   size="sm"
                   onClick={() => setCurrentRole('student')}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-500/25"
+                  className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-500/25 border-0"
                 >
-                  <GraduationCap className="h-4 w-4 mr-2" />
+                  <GraduationCap className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
                   Student Portal
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 rounded-md transition-opacity duration-300"></div>
                 </Button>
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
+            {/* Enhanced Mobile Menu Button */}
+            <div className="lg:hidden">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-300 hover:text-white"
+                className="text-gray-300 hover:text-white hover:bg-gray-800/50 p-3 rounded-lg transition-all duration-300"
               >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {mobileMenuOpen ? 
+                  <X className="h-6 w-6 rotate-90 transition-transform duration-300" /> : 
+                  <Menu className="h-6 w-6 hover:rotate-90 transition-transform duration-300" />
+                }
               </Button>
             </div>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Enhanced Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-800 animate-fade-in">
+            <div className="lg:hidden py-6 border-t border-gray-800/50 animate-fade-in bg-gray-900/50 backdrop-blur-xl rounded-b-2xl">
               <div className="flex flex-col space-y-4">
-                <a href="#home" className="text-gray-300 hover:text-blue-400 transition-colors">Home</a>
-                <a href="#courses" className="text-gray-300 hover:text-blue-400 transition-colors">Courses</a>
-                <a href="#about" className="text-gray-300 hover:text-blue-400 transition-colors">About</a>
-                <a href="#contact" className="text-gray-300 hover:text-blue-400 transition-colors">Contact</a>
-                <div className="flex flex-col space-y-2 pt-4 border-t border-gray-800">
+                {['Home', 'Courses', 'About', 'Contact'].map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase()}`}
+                    className="text-gray-300 hover:text-white transition-all duration-300 py-3 px-4 rounded-lg hover:bg-gray-800/50 border-l-4 border-transparent hover:border-blue-400"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item}
+                  </a>
+                ))}
+                
+                <div className="flex flex-col space-y-3 pt-4 border-t border-gray-800/50">
+                  <div className="px-4 text-sm text-gray-400 font-medium">Access Portals</div>
+                  
+                  {/* Mobile Admin/Staff Options */}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentRole('admin')}
-                    className="justify-start border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                    onClick={() => {
+                      setCurrentRole('admin');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="justify-start border-red-500/50 text-red-400 hover:bg-red-500/20 mx-4"
                   >
                     <Settings className="h-4 w-4 mr-2" />
-                    Admin/Staff Login
+                    Admin Portal
                   </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCurrentRole('staff');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="justify-start border-green-500/50 text-green-400 hover:bg-green-500/20 mx-4"
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Staff Portal
+                  </Button>
+                  
                   <Button
                     size="sm"
-                    onClick={() => setCurrentRole('student')}
-                    className="justify-start bg-gradient-to-r from-blue-500 to-purple-600"
+                    onClick={() => {
+                      setCurrentRole('student');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="justify-start bg-gradient-to-r from-blue-500 to-purple-600 mx-4"
                   >
                     <GraduationCap className="h-4 w-4 mr-2" />
                     Student Portal
