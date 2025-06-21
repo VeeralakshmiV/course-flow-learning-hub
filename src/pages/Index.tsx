@@ -37,20 +37,23 @@ const Index = () => {
     {
       id: 1,
       title: "Programming Fundamentals",
-      thumbnail: "/placeholder.svg",
-      instagramUrl: "https://instagram.com/alphaflyeducation"
+      filename: "alphavideo1.mp4",
+      thumbnail: "/thumbnails/a11.jpg",
+      instagramUrl: "https://www.instagram.com/reel/xyz1/"
     },
     {
       id: 2,
       title: "Web Development Mastery",
-      thumbnail: "/placeholder.svg",
-      instagramUrl: "https://instagram.com/alphaflyeducation"
+      filename: "videos/alphavideo2.mp4",
+      thumbnail: "/thumbnails/a9.jpg",
+      instagramUrl: "https://www.instagram.com/reel/xyz2/"
     },
     {
       id: 3,
       title: "Data Science Excellence",
-      thumbnail: "/placeholder.svg",
-      instagramUrl: "https://instagram.com/alphaflyeducation"
+      filename: "videos/alphavideo3.mp4",
+      thumbnail: "/thumbnails/a10.jpg",
+      instagramUrl: "https://www.instagram.com/reel/xyz3/"
     }
   ];
 
@@ -131,6 +134,17 @@ const Index = () => {
       students: 750
     }
   ];
+
+  const handlePlayVideo = (videoId: number) => {
+    const videoElem = document.getElementById(`video-player-${videoId}`) as HTMLVideoElement;
+    if (videoElem) {
+      videoElem.play();
+    }
+  };
+
+  const handleInstagramClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-x-hidden">
@@ -385,38 +399,48 @@ const Index = () => {
               >
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden rounded-lg">
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent group-hover:from-gray-900/60 transition-all duration-500 flex items-center justify-center">
-                      <div className="flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
-                        <Button
-                          size="lg"
-                          className="bg-blue-600/80 backdrop-blur-sm hover:bg-blue-600 border border-blue-400/30 shadow-lg shadow-blue-500/25"
-                        >
-                          <Play className="h-6 w-6 text-white" />
-                        </Button>
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          className="bg-purple-600/80 backdrop-blur-sm hover:bg-purple-600 border border-purple-400/30 text-white hover:text-white shadow-lg shadow-purple-500/25"
-                          onClick={() => window.open(video.instagramUrl, '_blank')}
-                        >
-                          <Instagram className="h-6 w-6" />
-                        </Button>
-                      </div>
+                    <video
+                      id={`video-player-${video.id}`}
+                      src={`/${video.filename}`}
+                      poster={video.thumbnail}
+                      className="w-full h-56 object-cover rounded-t-lg"
+                      preload="metadata"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                    
+                    {/* Action buttons positioned below video */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                      <Button
+                        size="lg"
+                        className="bg-blue-600/90 backdrop-blur-sm hover:bg-blue-600 border border-blue-400/30 shadow-lg shadow-blue-500/25"
+                        onClick={() => handlePlayVideo(video.id)}
+                      >
+                        <Play className="h-5 w-5 text-white" />
+                      </Button>
+                      
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="bg-purple-600/90 backdrop-blur-sm hover:bg-purple-600 border border-purple-400/30 text-white hover:text-white shadow-lg shadow-purple-500/25"
+                        onClick={() => handleInstagramClick(video.instagramUrl)}
+                      >
+                        <Instagram className="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
+                  
                   <div className="p-6">
-                    <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors text-lg">
+                    <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors text-lg mb-2">
                       {video.title}
                     </h3>
-                    <p className="text-sm text-gray-400 mt-2 flex items-center">
+                    <button
+                      className="text-sm text-gray-400 hover:text-blue-400 transition-colors flex items-center cursor-pointer"
+                      onClick={() => handleInstagramClick(video.instagramUrl)}
+                    >
                       <Instagram className="h-4 w-4 mr-2" />
                       Watch on Instagram →
-                    </p>
+                    </button>
                   </div>
                 </CardContent>
               </Card>
