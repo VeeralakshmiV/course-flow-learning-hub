@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, CreditCard, Calendar, DollarSign, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Download, CreditCard, Calendar, DollarSign, FileText, Plus, Edit, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
   id: string;
@@ -17,7 +21,8 @@ interface Payment {
 }
 
 const PaymentProcessing = () => {
-  const [payments] = useState<Payment[]>([
+  const { toast } = useToast();
+  const [payments, setPayments] = useState<Payment[]>([
     {
       id: "1",
       studentName: "John Doe",
@@ -56,8 +61,104 @@ const PaymentProcessing = () => {
     }
   ]);
 
+  const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [newPayment, setNewPayment] = useState({
+    studentName: "",
+    courseName: "",
+    amount: "",
+    status: "pending" as Payment['status']
+  });
+
+  const generateInvoiceNumber = () => {
+    const nextNumber = payments.length + 1;
+    return `INV-2024-${String(nextNumber).padStart(3, '0')}`;
+  };
+
+  const handleAddPayment = () => {
+    if (!newPayment.studentName || !newPayment.courseName || !newPayment.amount) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const payment: Payment = {
+      id: String(payments.length + 1),
+      studentName: newPayment.studentName,
+      courseName: newPayment.courseName,
+      amount: parseFloat(newPayment.amount),
+      status: newPayment.status,
+      date: new Date().toISOString().split('T')[0],
+      invoiceNumber: generateInvoiceNumber()
+    };
+
+    setPayments([...payments, payment]);
+    setNewPayment({
+      studentName: "",
+      courseName: "",
+      amount: "",
+      status: "pending"
+    });
+    setIsAddingPayment(false);
+    
+    toast({
+      title: "Success",
+      description: "Payment added successfully"
+    });
+  };
+
+  const handleEditPayment = (payment: Payment) => {
+    setEditingPayment(payment);
+    setNewPayment({
+      studentName: payment.studentName,
+      courseName: payment.courseName,
+      amount: payment.amount.toString(),
+      status: payment.status
+    });
+  };
+
+  const handleUpdatePayment = () => {
+    if (!editingPayment) return;
+
+    const updatedPayments = payments.map(payment => 
+      payment.id === editingPayment.id 
+        ? {
+            ...payment,
+            studentName: newPayment.studentName,
+            courseName: newPayment.courseName,
+            amount: parseFloat(newPayment.amount),
+            status: newPayment.status
+          }
+        : payment
+    );
+
+    setPayments(updatedPayments);
+    setEditingPayment(null);
+    setNewPayment({
+      studentName: "",
+      courseName: "",
+      amount: "",
+      status: "pending"
+    });
+
+    toast({
+      title: "Success",
+      description: "Payment updated successfully"
+    });
+  };
+
+  const handleDeletePayment = (paymentId: string) => {
+    setPayments(payments.filter(payment => payment.id !== paymentId));
+    toast({
+      title: "Success",
+      description: "Payment deleted successfully"
+    });
+  };
+
   const downloadInvoice = (payment: Payment) => {
-    // Generate and download invoice
     const invoiceContent = `
 INVOICE
 
@@ -164,6 +265,70 @@ Thank you for your business!
         </Card>
       </div>
 
+      {/* Add Payment Form */}
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Plus className="h-6 w-6 text-blue-600" />
+            Add New Payment
+          </CardTitle>
+          <CardDescription>
+            Create a new payment record manually
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="studentName">Student Name</Label>
+              <Input
+                id="studentName"
+                placeholder="Enter student name"
+                value={newPayment.studentName}
+                onChange={(e) => setNewPayment({...newPayment, studentName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="courseName">Course Name</Label>
+              <Input
+                id="courseName"
+                placeholder="Enter course name"
+                value={newPayment.courseName}
+                onChange={(e) => setNewPayment({...newPayment, courseName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0.00"
+                value={newPayment.amount}
+                onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={newPayment.status}
+                onChange={(e) => setNewPayment({...newPayment, status: e.target.value as Payment['status']})}
+              >
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-6">
+            <Button onClick={handleAddPayment} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Payment
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Payments Table */}
       <Card className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-xl">
         <CardHeader>
@@ -199,15 +364,90 @@ Thank you for your business!
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadInvoice(payment)}
-                        className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
-                      >
-                        <Download className="h-4 w-4" />
-                        Invoice
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadInvoice(payment)}
+                          className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
+                        >
+                          <Download className="h-4 w-4" />
+                          Invoice
+                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPayment(payment)}
+                              className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Payment</DialogTitle>
+                              <DialogDescription>
+                                Update payment information
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="editStudentName">Student Name</Label>
+                                <Input
+                                  id="editStudentName"
+                                  value={newPayment.studentName}
+                                  onChange={(e) => setNewPayment({...newPayment, studentName: e.target.value})}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="editCourseName">Course Name</Label>
+                                <Input
+                                  id="editCourseName"
+                                  value={newPayment.courseName}
+                                  onChange={(e) => setNewPayment({...newPayment, courseName: e.target.value})}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="editAmount">Amount</Label>
+                                <Input
+                                  id="editAmount"
+                                  type="number"
+                                  value={newPayment.amount}
+                                  onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="editStatus">Status</Label>
+                                <select
+                                  id="editStatus"
+                                  className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  value={newPayment.status}
+                                  onChange={(e) => setNewPayment({...newPayment, status: e.target.value as Payment['status']})}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="failed">Failed</option>
+                                </select>
+                              </div>
+                              <Button onClick={handleUpdatePayment} className="w-full">
+                                Update Payment
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeletePayment(payment.id)}
+                          className="flex items-center gap-2 hover:bg-red-50 hover:border-red-300 text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
