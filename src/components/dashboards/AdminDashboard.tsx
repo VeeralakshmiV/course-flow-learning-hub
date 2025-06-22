@@ -3,10 +3,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, BookOpen, Settings, BarChart3, LogOut, Sparkles } from "lucide-react";
+import { Users, BookOpen, CreditCard, BarChart3, LogOut, Sparkles } from "lucide-react";
 import CourseManager from "@/components/course/CourseManager";
 import UserManager from "@/components/admin/UserManager";
 import SystemStats from "@/components/admin/SystemStats";
+import PaymentProcessing from "@/components/admin/PaymentProcessing";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -70,11 +71,11 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
               Users
             </TabsTrigger>
             <TabsTrigger 
-              value="settings" 
+              value="payments" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
             >
-              <Settings className="h-4 w-4" />
-              Settings
+              <CreditCard className="h-4 w-4" />
+              Payments
             </TabsTrigger>
           </TabsList>
 
@@ -90,20 +91,8 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             <UserManager />
           </TabsContent>
 
-          <TabsContent value="settings" className="animate-fade-in">
-            <Card className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-900">System Settings</CardTitle>
-                <CardDescription>Configure platform settings and preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="py-16">
-                <div className="text-center">
-                  <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Settings Panel</h3>
-                  <p className="text-gray-600">Advanced system configuration coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="payments" className="animate-fade-in">
+            <PaymentProcessing />
           </TabsContent>
         </Tabs>
       </div>
