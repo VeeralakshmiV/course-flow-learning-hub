@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Save, X, Bold, Italic, List, Link, Image, Eye, Edit, FileText, Video, Upload } from "lucide-react";
+import { ArrowLeft, Save, X, Bold, Italic, List, Link, Image, Eye, Edit, FileText, Video, Upload, HelpCircle, BookOpen } from "lucide-react";
 import { Lesson } from "@/stores/courseStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import QuizEditor from "./QuizEditor";
+import AssignmentEditor from "./AssignmentEditor";
 
 interface LessonEditorProps {
   lesson?: Lesson;
@@ -23,6 +25,10 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
   const [urlInput, setUrlInput] = useState("");
   const [mediaType, setMediaType] = useState<"link" | "image" | "video" | "pdf">("link");
   const [insertMode, setInsertMode] = useState<"url" | "upload">("url");
+  const [editingQuiz, setEditingQuiz] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(false);
+  const [quiz, setQuiz] = useState(lesson?.quiz);
+  const [assignment, setAssignment] = useState(lesson?.assignment);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,8 +36,46 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     onSave({
       title,
       content,
+      quiz,
+      assignment,
     });
   };
+
+  // Show quiz editor
+  if (editingQuiz) {
+    return (
+      <QuizEditor
+        quiz={quiz}
+        onSave={(quizData) => {
+          const newQuiz = {
+            id: quiz?.id || Date.now().toString(),
+            ...quizData,
+          };
+          setQuiz(newQuiz);
+          setEditingQuiz(false);
+        }}
+        onClose={() => setEditingQuiz(false)}
+      />
+    );
+  }
+
+  // Show assignment editor
+  if (editingAssignment) {
+    return (
+      <AssignmentEditor
+        assignment={assignment}
+        onSave={(assignmentData) => {
+          const newAssignment = {
+            id: assignment?.id || Date.now().toString(),
+            ...assignmentData,
+          };
+          setAssignment(newAssignment);
+          setEditingAssignment(false);
+        }}
+        onClose={() => setEditingAssignment(false)}
+      />
+    );
+  }
 
   const insertFormatting = (format: string) => {
     const textarea = document.getElementById('lesson-content') as HTMLTextAreaElement;
@@ -122,8 +166,6 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // In a real application, you would upload the file to a server
-    // For now, we'll create a local URL for demonstration
     const fileUrl = URL.createObjectURL(file);
     const fileName = file.name;
     const fileType = file.type;
@@ -146,7 +188,6 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
     const newContent = content.substring(0, start) + insertText + content.substring(end);
     setContent(newContent);
 
-    // Clear the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -223,6 +264,63 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                   Lesson titles are displayed publicly wherever required.
                 </p>
               </div>
+              
+              {/* Interactive Content */}
+              <div className="pt-4 space-y-3">
+                <Badge variant="secondary" className="mb-2">
+                  Interactive Content
+                </Badge>
+                
+                <Button 
+                  size="sm" 
+                  variant={quiz ? "default" : "outline"}
+                  className="w-full"
+                  onClick={() => setEditingQuiz(true)}
+                >
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  {quiz ? 'Edit Quiz' : 'Add Quiz'}
+                </Button>
+                
+                <Button 
+                  size="sm" 
+                  variant={assignment ? "default" : "outline"}
+                  className="w-full"
+                  onClick={() => setEditingAssignment(true)}
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  {assignment ? 'Edit Assignment' : 'Add Assignment'}
+                </Button>
+
+                {(quiz || assignment) && (
+                  <div className="pt-2 space-y-1">
+                    {quiz && (
+                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                        <span className="text-xs text-blue-700">Quiz: {quiz.title}</span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => setQuiz(undefined)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    {assignment && (
+                      <div className="flex items-center justify-between p-2 bg-green-50 rounded">
+                        <span className="text-xs text-green-700">Assignment: {assignment.title}</span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => setAssignment(undefined)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="pt-4">
                 <Badge variant="secondary" className="mb-2">
                   Quick Upload
@@ -367,6 +465,7 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                   <div className="text-sm text-gray-500 space-y-2">
                     <p>💡 Use the toolbar buttons to insert images, videos, PDFs, and links into your content.</p>
                     <p>📁 Upload files directly using the "Quick Upload" button or choose URL/Upload in the media dialogs.</p>
+                    <p>🎯 Add interactive content with quizzes and assignments to engage your students.</p>
                   </div>
                 </TabsContent>
 
@@ -377,6 +476,25 @@ const LessonEditor = ({ lesson, onSave, onClose }: LessonEditorProps) => {
                       className="prose max-w-none"
                       dangerouslySetInnerHTML={renderPreview()}
                     />
+                    
+                    {/* Preview interactive content */}
+                    {(quiz || assignment) && (
+                      <div className="mt-8 space-y-4">
+                        <h4 className="text-lg font-semibold">Interactive Content</h4>
+                        {quiz && (
+                          <div className="p-4 bg-blue-50 rounded-lg">
+                            <h5 className="font-medium text-blue-900">📝 Quiz: {quiz.title}</h5>
+                            <p className="text-sm text-blue-700">{quiz.questions.length} questions</p>
+                          </div>
+                        )}
+                        {assignment && (
+                          <div className="p-4 bg-green-50 rounded-lg">
+                            <h5 className="font-medium text-green-900">📋 Assignment: {assignment.title}</h5>
+                            <p className="text-sm text-green-700">{assignment.maxPoints} points</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>

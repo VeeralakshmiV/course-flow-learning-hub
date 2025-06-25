@@ -1,11 +1,38 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  questions: QuizQuestion[];
+  timeLimit?: number; // in minutes
+  passingScore: number; // percentage
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  dueDate?: Date;
+  maxPoints: number;
+  submissionType: 'text' | 'file' | 'both';
+}
 
 export interface Lesson {
   id: string;
   title: string;
   content: string;
+  quiz?: Quiz;
+  assignment?: Assignment;
 }
 
 export interface Section {
