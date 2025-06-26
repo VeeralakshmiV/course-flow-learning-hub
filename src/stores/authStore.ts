@@ -63,9 +63,18 @@ export const useAuthStore = create<AuthState>()(
 
             if (error) throw error;
 
+            // Ensure role is properly typed
+            const typedProfile: Profile = {
+              id: profile.id,
+              email: profile.email,
+              name: profile.name,
+              role: profile.role as 'admin' | 'staff' | 'student',
+              created_at: profile.created_at
+            };
+
             set({
               user: session.user,
-              profile,
+              profile: typedProfile,
               session,
               isAuthenticated: true,
               isLoading: false,
