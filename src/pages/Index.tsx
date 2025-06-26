@@ -1,4 +1,5 @@
 
+import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import AuthPage from '@/components/auth/AuthPage';
 import AdminDashboard from '@/components/dashboards/AdminDashboard';
@@ -6,17 +7,29 @@ import StaffDashboard from '@/components/dashboards/StaffDashboard';
 import StudentDashboard from '@/components/dashboards/StudentDashboard';
 
 const Index = () => {
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, profile, isLoading, logout, initialize } = useAuthStore();
 
-  if (!isAuthenticated || !user) {
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !profile) {
     return <AuthPage />;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
   };
 
-  switch (user.role) {
+  switch (profile.role) {
     case 'admin':
       return <AdminDashboard onLogout={handleLogout} />;
     case 'staff':
