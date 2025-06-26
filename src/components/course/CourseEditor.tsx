@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit, Trash2, Save, X } from "lucide-react";
-import { useDatabaseCourseStore, Course, CourseSection } from "@/stores/databaseCourseStore";
+import { ArrowLeft, Plus, Edit, Trash2, Save } from "lucide-react";
+import { Course, CourseSection } from "@/types/courseTypes";
+import { useCourseStore } from "@/stores/courseStore";
+import { useSectionStore } from "@/stores/sectionStore";
+import { useContentStore } from "@/stores/contentStore";
 import LessonEditor from "./LessonEditor";
 
 interface CourseEditorProps {
@@ -21,13 +23,16 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
   const [sections, setSections] = useState<CourseSection[]>(course?.sections || []);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<{ sectionId: string; lessonId?: string } | null>(null);
-  const { createCourse, updateCourse, createSection, createContent } = useDatabaseCourseStore();
+  
+  const { createCourse, updateCourse } = useCourseStore();
+  const { createSection } = useSectionStore();
+  const { createContent } = useContentStore();
 
   const handleSave = async () => {
     const courseData = {
       title,
       description,
-      instructor: 'admin', // Default for now
+      instructor: 'admin',
       status: 'draft' as const,
       enrollment_fee: 0,
     };

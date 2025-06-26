@@ -1,205 +1,197 @@
+
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { supabase } from '@/integrations/supabase/client';
+import { Course, CourseSection } from '@/types/courseTypes';
+import { convertDatabaseCourse } from '@/utils/courseUtils';
+import { useSectionStore } from './sectionStore';
 
-export interface QuizQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation?: string;
-}
-
-export interface Quiz {
-  id: string;
-  title: string;
-  questions: QuizQuestion[];
-  timeLimit?: number; // in minutes
-  passingScore: number; // percentage
-}
-
-export interface Assignment {
-  id: string;
-  title: string;
-  description: string;
-  instructions: string;
-  dueDate?: Date;
-  maxPoints: number;
-  submissionType: 'text' | 'file' | 'both';
-}
-
-export interface Lesson {
-  id: string;
-  title: string;
-  content: string;
-  quiz?: Quiz;
-  assignment?: Assignment;
-}
-
-export interface Section {
-  id: string;
-  title: string;
-  lessons: Lesson[];
-}
-
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  sections: Section[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface CourseStore {
+interface CourseState {
   courses: Course[];
-  addCourse: (course: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateCourse: (id: string, updates: Partial<Course>) => void;
-  deleteCourse: (id: string) => void;
-  getCourse: (id: string) => Course | undefined;
+  isLoading: boolean;
+  error: string | null;
+  fetchCourses: () => Promise<void>;
+  fetchCourseWithDetails: (courseId: string) => Promise<Course | null>;
+  createCourse: (course: Omit<Course, 'id' | 'createdAt' | 'updatedAt' | 'sections'>) => Promise<void>;
+  updateCourse: (id: string, updates: Partial<Course>) => Promise<void>;
+  deleteCourse: (id: string) => Promise<void>;
+  setCourses: (courses: Course[]) => void;
 }
 
-export const useCourseStore = create<CourseStore>()(
-  persist(
-    (set, get) => ({
-      courses: [
-        {
-          id: 'demo-course-1',
-          title: 'Introduction to Web Development',
-          description: 'Learn the fundamentals of web development including HTML, CSS, and JavaScript.',
-          sections: [
-            {
-              id: 'section-1',
-              title: 'Getting Started',
-              lessons: [
-                {
-                  id: 'lesson-1',
-                  title: 'What is Web Development?',
-                  content: `# Welcome to Web Development
+export const useCourseStore = create<CourseState>((set, get) => ({
+  courses: [],
+  isLoading: false,
+  error: null,
 
-Web development is the process of building and maintaining websites. It involves several different aspects:
+  setCourses: (courses: Course[]) => {
+    set({ courses });
+  },
 
-## Frontend Development
-- **HTML**: The structure of web pages
-- **CSS**: Styling and layout
-- **JavaScript**: Interactive functionality
+  fetchCourses: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-## Backend Development
-- Server-side programming
-- Database management
-- API development
+      if (coursesError) throw coursesError;
 
-## Key Concepts
-- Responsive design
-- User experience (UX)
-- Performance optimization
+      // Fetch sections for each course
+      const courses = await Promise.all(
+        (coursesData || []).map(async (dbCourse) => {
+          const { data: sectionsData, error: sectionsError } = await supabase
+            .from('course_sections')
+            .select('*, course_content(*)')
+            .eq('course_id', dbCourse.id)
+            .order('order_index', { ascending: true });
 
-Let's start your journey into the exciting world of web development!`
-                },
-                {
-                  id: 'lesson-2',
-                  title: 'Setting Up Your Environment',
-                  content: `# Development Environment Setup
+          if (sectionsError) {
+            console.error('Error fetching sections:', sectionsError);
+            return convertDatabaseCourse(dbCourse);
+          }
 
-Before we start coding, let's set up your development environment.
+          const sections: CourseSection[] = (sectionsData || []).map(section => ({
+            id: section.id,
+            title: section.title,
+            order: section.order_index,
+            lessons: (section.course_content || []).map((content: any) => ({
+              id: content.id,
+              title: content.title,
+              content: content.content || '',
+              type: content.type as 'lesson' | 'quiz' | 'assignment',
+              order: content.order_index,
+              is_free: false,
+            })).sort((a: any, b: any) => a.order - b.order)
+          })).sort((a, b) => a.order - b.order);
 
-## Required Tools
-- **Code Editor**: VS Code, Sublime Text, or Atom
-- **Web Browser**: Chrome, Firefox, or Safari
-- **Version Control**: Git
+          // Update section store
+          useSectionStore.getState().setSections(dbCourse.id, sections);
 
-## Installation Steps
-1. Download and install a code editor
-2. Install Git for version control
-3. Set up a local development server
-4. Configure your browser dev tools
+          return convertDatabaseCourse(dbCourse, sections);
+        })
+      );
 
-## Best Practices
-- Keep your workspace organized
-- Use consistent naming conventions
-- Comment your code regularly
-
-You're now ready to start building amazing websites!`
-                }
-              ]
-            },
-            {
-              id: 'section-2',
-              title: 'HTML Fundamentals',
-              lessons: [
-                {
-                  id: 'lesson-3',
-                  title: 'HTML Structure and Elements',
-                  content: `# HTML Structure and Elements
-
-HTML (HyperText Markup Language) is the foundation of all web pages.
-
-## Basic Structure
-Every HTML document has a basic structure:
-
-\`\`\`html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Page Title</title>
-</head>
-<body>
-    <h1>Main Heading</h1>
-    <p>This is a paragraph.</p>
-</body>
-</html>
-\`\`\`
-
-## Common Elements
-- **Headings**: h1, h2, h3, h4, h5, h6
-- **Paragraphs**: p
-- **Links**: a
-- **Images**: img
-- **Lists**: ul, ol, li
-
-## Semantic HTML
-Use semantic elements to improve accessibility and SEO:
-- header, nav, main, section, article, aside, footer
-
-Practice creating HTML documents with proper structure and semantic elements!`
-                }
-              ]
-            }
-          ],
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-20')
-        }
-      ],
-      addCourse: (courseData) => {
-        const newCourse: Course = {
-          ...courseData,
-          id: Date.now().toString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        set((state) => ({
-          courses: [...state.courses, newCourse],
-        }));
-      },
-      updateCourse: (id, updates) => {
-        set((state) => ({
-          courses: state.courses.map((course) =>
-            course.id === id
-              ? { ...course, ...updates, updatedAt: new Date() }
-              : course
-          ),
-        }));
-      },
-      deleteCourse: (id) => {
-        set((state) => ({
-          courses: state.courses.filter((course) => course.id !== id),
-        }));
-      },
-      getCourse: (id) => {
-        return get().courses.find((course) => course.id === id);
-      },
-    }),
-    {
-      name: 'course-store',
+      set({ courses, isLoading: false });
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      set({ error: 'Failed to fetch courses', isLoading: false });
     }
-  )
-);
+  },
+
+  fetchCourseWithDetails: async (courseId: string) => {
+    try {
+      const { data: courseData, error: courseError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
+
+      if (courseError) throw courseError;
+
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('course_sections')
+        .select('*, course_content(*)')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true });
+
+      if (sectionsError) throw sectionsError;
+
+      const sections: CourseSection[] = (sectionsData || []).map(section => ({
+        id: section.id,
+        title: section.title,
+        order: section.order_index,
+        lessons: (section.course_content || []).map((content: any) => ({
+          id: content.id,
+          title: content.title,
+          content: content.content || '',
+          type: content.type as 'lesson' | 'quiz' | 'assignment',
+          order: content.order_index,
+          is_free: false,
+        })).sort((a: any, b: any) => a.order - b.order)
+      })).sort((a, b) => a.order - b.order);
+
+      return convertDatabaseCourse(courseData, sections);
+    } catch (error) {
+      console.error('Error fetching course details:', error);
+      return null;
+    }
+  },
+
+  createCourse: async (courseData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .insert({
+          name: courseData.title,
+          description: courseData.description,
+          instructor_id: courseData.instructor,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newCourse = convertDatabaseCourse(data);
+      set(state => ({
+        courses: [newCourse, ...state.courses],
+        isLoading: false
+      }));
+    } catch (error) {
+      console.error('Error creating course:', error);
+      set({ error: 'Failed to create course', isLoading: false });
+      throw error;
+    }
+  },
+
+  updateCourse: async (id, updates) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .update({
+          name: updates.title,
+          description: updates.description,
+          instructor_id: updates.instructor,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedCourse = convertDatabaseCourse(data);
+      set(state => ({
+        courses: state.courses.map(course => 
+          course.id === id ? { ...updatedCourse, sections: course.sections } : course
+        ),
+        isLoading: false
+      }));
+    } catch (error) {
+      console.error('Error updating course:', error);
+      set({ error: 'Failed to update course', isLoading: false });
+      throw error;
+    }
+  },
+
+  deleteCourse: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set(state => ({
+        courses: state.courses.filter(course => course.id !== id),
+        isLoading: false
+      }));
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      set({ error: 'Failed to delete course', isLoading: false });
+      throw error;
+    }
+  }
+}));

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Users, BookOpen, DollarSign } from "lucide-react";
-import { useDatabaseCourseStore } from "@/stores/databaseCourseStore";
+import { Plus, Edit, Trash2, BookOpen, DollarSign } from "lucide-react";
+import { useCourseStore } from "@/stores/courseStore";
 import { useToast } from "@/hooks/use-toast";
 import CourseEditor from "./CourseEditor";
 
@@ -21,7 +21,7 @@ const CourseManager = ({ role }: CourseManagerProps) => {
     error, 
     fetchCourses, 
     deleteCourse 
-  } = useDatabaseCourseStore();
+  } = useCourseStore();
   
   const { toast } = useToast();
 
