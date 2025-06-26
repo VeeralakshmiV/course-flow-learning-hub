@@ -6,48 +6,56 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Edit, Trash2, Save, X } from "lucide-react";
-import { useCourseStore, Course, Section } from "@/stores/courseStore";
+import { useDatabaseCourseStore, Course, CourseSection } from "@/stores/databaseCourseStore";
 import LessonEditor from "./LessonEditor";
 
 interface CourseEditorProps {
   course?: Course;
   onClose: () => void;
+  onSave: () => void;
 }
 
-const CourseEditor = ({ course, onClose }: CourseEditorProps) => {
+const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
   const [title, setTitle] = useState(course?.title || "");
   const [description, setDescription] = useState(course?.description || "");
-  const [sections, setSections] = useState<Section[]>(course?.sections || []);
+  const [sections, setSections] = useState<CourseSection[]>(course?.sections || []);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<{ sectionId: string; lessonId?: string } | null>(null);
-  const { addCourse, updateCourse } = useCourseStore();
+  const { createCourse, updateCourse } = useDatabaseCourseStore();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const courseData = {
       title,
       description,
-      sections,
+      instructor: 'admin', // Default for now
+      status: 'draft' as const,
+      enrollment_fee: 0,
     };
 
-    if (course) {
-      updateCourse(course.id, courseData);
-    } else {
-      addCourse(courseData);
+    try {
+      if (course) {
+        await updateCourse(course.id, courseData);
+      } else {
+        await createCourse(courseData);
+      }
+      onSave();
+    } catch (error) {
+      console.error('Error saving course:', error);
     }
-    onClose();
   };
 
   const addSection = () => {
-    const newSection: Section = {
+    const newSection: CourseSection = {
       id: Date.now().toString(),
       title: "New Section",
+      order: sections.length,
       lessons: [],
     };
     setSections([...sections, newSection]);
     setEditingSection(newSection.id);
   };
 
-  const updateSection = (sectionId: string, updates: Partial<Section>) => {
+  const updateSection = (sectionId: string, updates: Partial<CourseSection>) => {
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, ...updates } : section
     ));
@@ -81,6 +89,9 @@ const CourseEditor = ({ course, onClose }: CourseEditorProps) => {
                 // Add new lesson
                 const newLesson = {
                   id: Date.now().toString(),
+                  type: 'lesson' as const,
+                  order: section.lessons.length,
+                  is_free: false,
                   ...lessonData,
                 };
                 return {
