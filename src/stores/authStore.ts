@@ -15,7 +15,6 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: 'admin' | 'staff' | 'student') => Promise<void>;
   logout: () => void;
   setUser: (user: User, token: string) => void;
 }
@@ -68,53 +67,6 @@ export const useAuthStore = create<AuthState>()(
           });
         } catch (error) {
           console.error('Login error:', error);
-          throw error;
-        }
-      },
-
-      register: async (name: string, email: string, password: string, role: 'admin' | 'staff' | 'student') => {
-        try {
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-          });
-
-          if (authError) {
-            throw new Error(authError.message);
-          }
-
-          if (!authData.user) {
-            throw new Error('No user data returned');
-          }
-
-          // Insert user profile into profiles table
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              name,
-              role,
-            });
-
-          if (profileError) {
-            throw new Error('Failed to create user profile');
-          }
-
-          const user: User = {
-            id: authData.user.id,
-            email: authData.user.email!,
-            name,
-            role,
-            createdAt: authData.user.created_at,
-          };
-
-          set({
-            user,
-            token: authData.session?.access_token || null,
-            isAuthenticated: true,
-          });
-        } catch (error) {
-          console.error('Registration error:', error);
           throw error;
         }
       },

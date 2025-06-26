@@ -1,21 +1,22 @@
-
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, UserPlus, Edit, Trash2 } from "lucide-react";
+import { Users, UserPlus, Edit, Trash2, Plus } from "lucide-react";
+import UserCreationForm from "./UserCreationForm";
 
 const UserManager = () => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  
   const users = [
     { id: '1', name: 'John Doe', email: 'john@example.com', role: 'student', status: 'active', enrolledCourses: 3 },
     { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'staff', status: 'active', enrolledCourses: 0 },
     { id: '3', name: 'Bob Wilson', email: 'bob@example.com', role: 'student', status: 'inactive', enrolledCourses: 1 },
-    { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'admin', status: 'active', enrolledCourses: 0 },
   ];
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
       case 'staff': return 'bg-blue-100 text-blue-800';
       case 'student': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -26,6 +27,27 @@ const UserManager = () => {
     return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
+  if (showCreateForm) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Create New User</h2>
+            <p className="text-gray-600">Add staff or student accounts to the system</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowCreateForm(false)}
+            className="flex items-center gap-2"
+          >
+            Back to Users
+          </Button>
+        </div>
+        <UserCreationForm />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -33,9 +55,12 @@ const UserManager = () => {
           <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
           <p className="text-gray-600">Manage system users and their roles</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowCreateForm(true)}
+        >
           <UserPlus className="h-4 w-4" />
-          Add User
+          Create User
         </Button>
       </div>
 
@@ -73,12 +98,18 @@ const UserManager = () => {
         </Card>
         <Card>
           <CardContent className="flex items-center p-6">
-            <Users className="h-8 w-8 text-red-600 mr-4" />
+            <Plus className="h-8 w-8 text-purple-600 mr-4" />
             <div>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter(u => u.role === 'admin').length}
-              </p>
-              <p className="text-sm text-gray-500">Admins</p>
+              <Button 
+                variant="ghost" 
+                className="p-0 h-auto text-left"
+                onClick={() => setShowCreateForm(true)}
+              >
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">+</p>
+                  <p className="text-sm text-gray-500">Add New User</p>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>
