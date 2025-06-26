@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +62,7 @@ const CourseManager = ({ role }: CourseManagerProps) => {
   if (showEditor) {
     return (
       <CourseEditor
-        courseId={editingCourse}
+        course={editingCourse ? courses.find(c => c.id === editingCourse) : undefined}
         onClose={() => setShowEditor(false)}
         onSave={() => {
           setShowEditor(false);

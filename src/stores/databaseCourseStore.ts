@@ -2,15 +2,12 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 
-// Updated types to match database schema
+// Updated types to match actual database schema
 export interface DatabaseCourse {
   id: string;
   name: string;
   description: string | null;
   instructor_id: string | null;
-  title: string | null;
-  status: string | null;
-  enrollment_fee: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,12 +86,12 @@ interface DatabaseCourseState {
 // Helper function to convert database course to frontend course
 const convertDatabaseCourse = (dbCourse: DatabaseCourse): Course => ({
   id: dbCourse.id,
-  title: dbCourse.title || dbCourse.name,
+  title: dbCourse.name,
   description: dbCourse.description || '',
   instructor: dbCourse.instructor_id || 'Unknown',
   sections: [],
-  status: (dbCourse.status as 'draft' | 'published') || 'draft',
-  enrollment_fee: dbCourse.enrollment_fee || 0,
+  status: 'draft' as const, // Default to draft since status column doesn't exist yet
+  enrollment_fee: 0, // Default to 0 since enrollment_fee column doesn't exist yet
   createdAt: dbCourse.created_at,
   updatedAt: dbCourse.updated_at
 });
@@ -132,11 +129,8 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
         .from('courses')
         .insert({
           name: courseData.title,
-          title: courseData.title,
           description: courseData.description,
           instructor_id: courseData.instructor,
-          status: courseData.status,
-          enrollment_fee: courseData.enrollment_fee
         })
         .select()
         .single();
@@ -161,11 +155,8 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
         .from('courses')
         .update({
           name: updates.title,
-          title: updates.title,
           description: updates.description,
           instructor_id: updates.instructor,
-          status: updates.status,
-          enrollment_fee: updates.enrollment_fee
         })
         .eq('id', id)
         .select()
@@ -214,7 +205,6 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
         .insert({
           course_id: courseId,
           title: sectionData.title,
-          description: sectionData.description,
           order_index: sectionData.order
         })
         .select()
@@ -225,7 +215,7 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
       const newSection: CourseSection = {
         id: data.id,
         title: data.title,
-        description: data.description,
+        description: undefined, // description column doesn't exist in schema
         order: data.order_index,
         lessons: []
       };
@@ -248,7 +238,6 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
         .from('course_sections')
         .update({
           title: updates.title,
-          description: updates.description,
           order_index: updates.order
         })
         .eq('id', id);
@@ -285,9 +274,6 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
           content: contentData.content,
           type: contentData.type,
           order_index: contentData.order,
-          is_free: contentData.is_free,
-          video_url: contentData.video_url,
-          duration_minutes: contentData.duration_minutes
         })
         .select()
         .single();
@@ -300,9 +286,9 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
         content: data.content || '',
         type: data.type as 'lesson' | 'quiz' | 'assignment',
         order: data.order_index,
-        is_free: data.is_free || false,
-        video_url: data.video_url,
-        duration_minutes: data.duration_minutes
+        is_free: false, // Default since column doesn't exist
+        video_url: undefined, // Column doesn't exist
+        duration_minutes: undefined // Column doesn't exist
       };
 
       set(state => ({
@@ -326,9 +312,6 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
           content: updates.content,
           type: updates.type,
           order_index: updates.order,
-          is_free: updates.is_free,
-          video_url: updates.video_url,
-          duration_minutes: updates.duration_minutes
         })
         .eq('id', id);
 
@@ -353,10 +336,9 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
     }
   },
 
-  // Quiz question actions (these will need the tables from the migration)
+  // Quiz question actions (placeholder implementations)
   createQuizQuestion: async (contentId, questionData) => {
     try {
-      // This will work after the database migration is applied
       console.log('Quiz question creation will be implemented after database migration');
     } catch (error) {
       console.error('Error creating quiz question:', error);

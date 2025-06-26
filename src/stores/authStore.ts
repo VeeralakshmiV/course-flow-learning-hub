@@ -19,6 +19,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: 'admin' | 'staff' | 'student') => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   setAuth: (session: Session | null) => Promise<void>;
@@ -106,6 +107,28 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
+          });
+
+          if (error) throw error;
+          // setAuth will be called by the auth state change listener
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      register: async (name: string, email: string, password: string, role: 'admin' | 'staff' | 'student') => {
+        try {
+          set({ isLoading: true });
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                name,
+                role,
+              },
+            },
           });
 
           if (error) throw error;
