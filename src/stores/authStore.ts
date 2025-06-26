@@ -1,6 +1,6 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface User {
   id: string;
@@ -29,22 +29,41 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email: string, password: string) => {
         try {
-          const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
           });
 
-          if (!response.ok) {
-            throw new Error('Login failed');
+          if (authError) {
+            throw new Error(authError.message);
           }
 
-          const data = await response.json();
+          if (!authData.user) {
+            throw new Error('No user data returned');
+          }
+
+          // Fetch user profile from profiles table
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+
+          if (profileError) {
+            throw new Error('Failed to fetch user profile');
+          }
+
+          const user: User = {
+            id: authData.user.id,
+            email: authData.user.email!,
+            name: profileData.name,
+            role: profileData.role,
+            createdAt: authData.user.created_at,
+          };
+
           set({
-            user: data.user,
-            token: data.token,
+            user,
+            token: authData.session?.access_token || null,
             isAuthenticated: true,
           });
         } catch (error) {
@@ -55,22 +74,43 @@ export const useAuthStore = create<AuthState>()(
 
       register: async (name: string, email: string, password: string, role: 'admin' | 'staff' | 'student') => {
         try {
-          const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name, email, password, role }),
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
           });
 
-          if (!response.ok) {
-            throw new Error('Registration failed');
+          if (authError) {
+            throw new Error(authError.message);
           }
 
-          const data = await response.json();
+          if (!authData.user) {
+            throw new Error('No user data returned');
+          }
+
+          // Insert user profile into profiles table
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              name,
+              role,
+            });
+
+          if (profileError) {
+            throw new Error('Failed to create user profile');
+          }
+
+          const user: User = {
+            id: authData.user.id,
+            email: authData.user.email!,
+            name,
+            role,
+            createdAt: authData.user.created_at,
+          };
+
           set({
-            user: data.user,
-            token: data.token,
+            user,
+            token: authData.session?.access_token || null,
             isAuthenticated: true,
           });
         } catch (error) {
@@ -79,12 +119,23 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-        });
+      logout: async () => {
+        try {
+          await supabase.auth.signOut();
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+          });
+        } catch (error) {
+          console.error('Logout error:', error);
+          // Still clear the local state even if logout fails
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+          });
+        }
       },
 
       setUser: (user: User, token: string) => {
