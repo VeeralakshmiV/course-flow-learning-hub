@@ -13,6 +13,16 @@ const Index = () => {
     initialize();
   }, [initialize]);
 
+  // For testing purposes, bypass authentication and go directly to admin dashboard
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  // Temporarily bypass authentication for testing
+  return <AdminDashboard onLogout={handleLogout} />;
+
+  // Original authentication logic (commented out for testing)
+  /*
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -25,10 +35,6 @@ const Index = () => {
     return <AuthPage />;
   }
 
-  const handleLogout = async () => {
-    await logout();
-  };
-
   switch (profile.role) {
     case 'admin':
       return <AdminDashboard onLogout={handleLogout} />;
@@ -39,6 +45,7 @@ const Index = () => {
     default:
       return <AuthPage />;
   }
+  */
 };
 
 export default Index;

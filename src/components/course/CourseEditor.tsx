@@ -21,7 +21,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
   const [sections, setSections] = useState<CourseSection[]>(course?.sections || []);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<{ sectionId: string; lessonId?: string } | null>(null);
-  const { createCourse, updateCourse } = useDatabaseCourseStore();
+  const { createCourse, updateCourse, createSection, createContent } = useDatabaseCourseStore();
 
   const handleSave = async () => {
     const courseData = {
@@ -65,6 +65,23 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
     setSections(sections.filter(section => section.id !== sectionId));
   };
 
+  const handleSaveSection = async (sectionId: string) => {
+    if (!course) return;
+    
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    try {
+      await createSection(course.id, {
+        title: section.title,
+        order: section.order
+      });
+      setEditingSection(null);
+    } catch (error) {
+      console.error('Error saving section:', error);
+    }
+  };
+
   if (editingLesson) {
     const section = sections.find(s => s.id === editingLesson.sectionId);
     const lesson = editingLesson.lessonId 
@@ -74,7 +91,9 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
     return (
       <LessonEditor
         lesson={lesson}
-        onSave={(lessonData) => {
+        onSave={async (lessonData) => {
+          if (!course) return;
+
           const updatedSections = sections.map(section => {
             if (section.id === editingLesson.sectionId) {
               if (editingLesson.lessonId) {
@@ -94,6 +113,10 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                   is_free: false,
                   ...lessonData,
                 };
+                
+                // Save to database
+                createContent(section.id, newLesson);
+                
                 return {
                   ...section,
                   lessons: [...section.lessons, newLesson]
@@ -193,7 +216,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                               />
                               <Button
                                 size="sm"
-                                onClick={() => setEditingSection(null)}
+                                onClick={() => handleSaveSection(section.id)}
                               >
                                 <Save className="h-4 w-4" />
                               </Button>

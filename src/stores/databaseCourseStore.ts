@@ -63,6 +63,7 @@ interface DatabaseCourseState {
 
   // Course actions
   fetchCourses: () => Promise<void>;
+  fetchCourseWithDetails: (courseId: string) => Promise<Course | null>;
   createCourse: (course: Omit<Course, 'id' | 'createdAt' | 'updatedAt' | 'sections'>) => Promise<void>;
   updateCourse: (id: string, updates: Partial<Course>) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
@@ -84,14 +85,14 @@ interface DatabaseCourseState {
 }
 
 // Helper function to convert database course to frontend course
-const convertDatabaseCourse = (dbCourse: DatabaseCourse): Course => ({
+const convertDatabaseCourse = (dbCourse: DatabaseCourse, sections: CourseSection[] = []): Course => ({
   id: dbCourse.id,
   title: dbCourse.name,
   description: dbCourse.description || '',
   instructor: dbCourse.instructor_id || 'Unknown',
-  sections: [],
-  status: 'draft' as const, // Default to draft since status column doesn't exist yet
-  enrollment_fee: 0, // Default to 0 since enrollment_fee column doesn't exist yet
+  sections: sections,
+  status: 'draft' as const,
+  enrollment_fee: 0,
   createdAt: dbCourse.created_at,
   updatedAt: dbCourse.updated_at
 });
@@ -114,11 +115,81 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
 
       if (coursesError) throw coursesError;
 
-      const courses = (coursesData || []).map(convertDatabaseCourse);
+      // Fetch sections for each course
+      const courses = await Promise.all(
+        (coursesData || []).map(async (dbCourse) => {
+          const { data: sectionsData, error: sectionsError } = await supabase
+            .from('course_sections')
+            .select('*, course_content(*)')
+            .eq('course_id', dbCourse.id)
+            .order('order_index', { ascending: true });
+
+          if (sectionsError) {
+            console.error('Error fetching sections:', sectionsError);
+            return convertDatabaseCourse(dbCourse);
+          }
+
+          const sections: CourseSection[] = (sectionsData || []).map(section => ({
+            id: section.id,
+            title: section.title,
+            order: section.order_index,
+            lessons: (section.course_content || []).map((content: any) => ({
+              id: content.id,
+              title: content.title,
+              content: content.content || '',
+              type: content.type as 'lesson' | 'quiz' | 'assignment',
+              order: content.order_index,
+              is_free: false,
+            })).sort((a: any, b: any) => a.order - b.order)
+          })).sort((a, b) => a.order - b.order);
+
+          return convertDatabaseCourse(dbCourse, sections);
+        })
+      );
+
       set({ courses, isLoading: false });
     } catch (error) {
       console.error('Error fetching courses:', error);
       set({ error: 'Failed to fetch courses', isLoading: false });
+    }
+  },
+
+  fetchCourseWithDetails: async (courseId: string) => {
+    try {
+      const { data: courseData, error: courseError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
+
+      if (courseError) throw courseError;
+
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('course_sections')
+        .select('*, course_content(*)')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true });
+
+      if (sectionsError) throw sectionsError;
+
+      const sections: CourseSection[] = (sectionsData || []).map(section => ({
+        id: section.id,
+        title: section.title,
+        order: section.order_index,
+        lessons: (section.course_content || []).map((content: any) => ({
+          id: content.id,
+          title: content.title,
+          content: content.content || '',
+          type: content.type as 'lesson' | 'quiz' | 'assignment',
+          order: content.order_index,
+          is_free: false,
+        })).sort((a: any, b: any) => a.order - b.order)
+      })).sort((a, b) => a.order - b.order);
+
+      return convertDatabaseCourse(courseData, sections);
+    } catch (error) {
+      console.error('Error fetching course details:', error);
+      return null;
     }
   },
 
@@ -167,7 +238,7 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
       const updatedCourse = convertDatabaseCourse(data);
       set(state => ({
         courses: state.courses.map(course => 
-          course.id === id ? updatedCourse : course
+          course.id === id ? { ...updatedCourse, sections: course.sections } : course
         ),
         isLoading: false
       }));
@@ -215,16 +286,16 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
       const newSection: CourseSection = {
         id: data.id,
         title: data.title,
-        description: undefined, // description column doesn't exist in schema
         order: data.order_index,
         lessons: []
       };
 
       set(state => ({
-        sections: {
-          ...state.sections,
-          [courseId]: [...(state.sections[courseId] || []), newSection]
-        }
+        courses: state.courses.map(course => 
+          course.id === courseId 
+            ? { ...course, sections: [...course.sections, newSection] }
+            : course
+        )
       }));
     } catch (error) {
       console.error('Error creating section:', error);
@@ -286,9 +357,7 @@ export const useDatabaseCourseStore = create<DatabaseCourseState>((set, get) => 
         content: data.content || '',
         type: data.type as 'lesson' | 'quiz' | 'assignment',
         order: data.order_index,
-        is_free: false, // Default since column doesn't exist
-        video_url: undefined, // Column doesn't exist
-        duration_minutes: undefined // Column doesn't exist
+        is_free: false,
       };
 
       set(state => ({
