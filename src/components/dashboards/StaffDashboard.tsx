@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, BarChart3, LogOut, GraduationCap, Sparkles } from "lucide-react";
+import { BookOpen, Users, BarChart3, LogOut, GraduationCap, Sparkles, Settings } from "lucide-react";
 import CourseManager from "@/components/course/CourseManager";
+import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
 
 interface StaffDashboardProps {
   onLogout: () => void;
@@ -45,7 +46,7 @@ const StaffDashboard = ({ onLogout }: StaffDashboardProps) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-xl p-2">
+          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-xl p-2">
             <TabsTrigger 
               value="courses" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white transition-all duration-300"
@@ -66,6 +67,13 @@ const StaffDashboard = ({ onLogout }: StaffDashboardProps) => {
             >
               <BarChart3 className="h-4 w-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -103,6 +111,16 @@ const StaffDashboard = ({ onLogout }: StaffDashboardProps) => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="animate-fade-in">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Account Settings</h2>
+                <p className="text-gray-600">Manage your account preferences and security</p>
+              </div>
+              <PasswordChangeForm />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

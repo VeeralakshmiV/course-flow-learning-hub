@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, BookOpen, CreditCard, BarChart3, LogOut, Sparkles } from "lucide-react";
+import { Users, BookOpen, CreditCard, BarChart3, LogOut, Sparkles, Settings } from "lucide-react";
 import CourseManager from "@/components/course/CourseManager";
 import UserManager from "@/components/admin/UserManager";
 import SystemStats from "@/components/admin/SystemStats";
 import PaymentProcessing from "@/components/admin/PaymentProcessing";
+import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -48,7 +49,7 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-xl p-2">
+          <TabsList className="grid w-full grid-cols-5 bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-xl p-2">
             <TabsTrigger 
               value="overview" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-300"
@@ -77,6 +78,13 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
               <CreditCard className="h-4 w-4" />
               Payments
             </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="animate-fade-in">
@@ -93,6 +101,16 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
 
           <TabsContent value="payments" className="animate-fade-in">
             <PaymentProcessing />
+          </TabsContent>
+
+          <TabsContent value="settings" className="animate-fade-in">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Account Settings</h2>
+                <p className="text-gray-600">Manage your account preferences and security</p>
+              </div>
+              <PasswordChangeForm />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

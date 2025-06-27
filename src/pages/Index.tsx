@@ -5,6 +5,7 @@ import AuthPage from '@/components/auth/AuthPage';
 import AdminDashboard from '@/components/dashboards/AdminDashboard';
 import StaffDashboard from '@/components/dashboards/StaffDashboard';
 import StudentDashboard from '@/components/dashboards/StudentDashboard';
+import LandingPage from '@/components/LandingPage';
 
 const Index = () => {
   const { isAuthenticated, profile, isLoading, logout, initialize } = useAuthStore();
@@ -13,16 +14,10 @@ const Index = () => {
     initialize();
   }, [initialize]);
 
-  // For testing purposes, bypass authentication and go directly to admin dashboard
   const handleLogout = async () => {
     await logout();
   };
 
-  // Temporarily bypass authentication for testing
-  return <AdminDashboard onLogout={handleLogout} />;
-
-  // Original authentication logic (commented out for testing)
-  /*
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -32,7 +27,7 @@ const Index = () => {
   }
 
   if (!isAuthenticated || !profile) {
-    return <AuthPage />;
+    return <LandingPage />;
   }
 
   switch (profile.role) {
@@ -43,9 +38,8 @@ const Index = () => {
     case 'student':
       return <StudentDashboard onLogout={handleLogout} />;
     default:
-      return <AuthPage />;
+      return <LandingPage />;
   }
-  */
 };
 
 export default Index;
