@@ -110,13 +110,14 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                   )
                 };
               } else {
-                // Add new lesson
+                // Add new lesson with required properties
                 const newLesson = {
                   id: Date.now().toString(),
+                  title: lessonData.title || 'New Lesson',
+                  content: lessonData.content || '',
                   type: 'lesson' as const,
                   order: section.lessons.length,
                   is_free: false,
-                  ...lessonData,
                 };
                 
                 // Save to database

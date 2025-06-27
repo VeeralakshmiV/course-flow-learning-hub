@@ -195,3 +195,6 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     }
   }
 }));
+
+// Export types for backward compatibility
+export type { Course } from '@/types/courseTypes';

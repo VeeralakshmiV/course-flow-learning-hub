@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Play, CheckCircle, Clock, BookOpen, LogOut, ChevronRight, ChevronDown } from "lucide-react";
-import { Course, Lesson } from "@/stores/courseStore";
+import { Course, Lesson } from "@/types/courseTypes";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface CourseViewerProps {

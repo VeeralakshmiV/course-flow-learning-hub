@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Save, X, Bold, Italic, List, Link, Image, Eye, Edit, FileText, Video, Upload, HelpCircle, BookOpen } from "lucide-react";
-import { Lesson } from "@/stores/courseStore";
+import { Lesson } from "@/types/courseTypes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuizEditor from "./QuizEditor";
 import AssignmentEditor from "./AssignmentEditor";

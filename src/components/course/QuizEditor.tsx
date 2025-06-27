@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
-import { Quiz, QuizQuestion } from "@/stores/courseStore";
+import { Quiz, QuizQuestion } from "@/types/courseTypes";
 
 interface QuizEditorProps {
   quiz?: Quiz;

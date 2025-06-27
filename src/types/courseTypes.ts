@@ -49,3 +49,30 @@ export interface QuizQuestion {
   explanation?: string;
   points: number;
 }
+
+// Legacy types for backward compatibility
+export interface Lesson {
+  id: string;
+  title: string;
+  content: string;
+  quiz?: Quiz;
+  assignment?: Assignment;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  questions: QuizQuestion[];
+  timeLimit?: number;
+  passingScore: number;
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  dueDate?: Date;
+  maxPoints: number;
+  submissionType: 'text' | 'file' | 'both';
+}
