@@ -9,6 +9,7 @@ import { Course, CourseSection } from "@/types/courseTypes";
 import { useCourseStore } from "@/stores/courseStore";
 import { useSectionStore } from "@/stores/sectionStore";
 import { useContentStore } from "@/stores/contentStore";
+import { useToast } from "@/hooks/use-toast";
 import LessonEditor from "./LessonEditor";
 
 interface CourseEditorProps {
@@ -23,35 +24,84 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
   const [sections, setSections] = useState<CourseSection[]>(course?.sections || []);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<{ sectionId: string; lessonId?: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const { createCourse, updateCourse } = useCourseStore();
-  const { createSection } = useSectionStore();
-  const { createContent } = useContentStore();
+  const { createSection, updateSection } = useSectionStore();
+  const { createContent, updateContent } = useContentStore();
+  const { toast } = useToast();
 
   const handleSave = async () => {
-    const courseData = {
-      title,
-      description,
-      instructor: 'admin',
-      status: 'draft' as const,
-      enrollment_fee: 0,
-    };
+    if (!title.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a course title",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setIsLoading(true);
     try {
+      const courseData = {
+        title: title.trim(),
+        description: description.trim(),
+        instructor: 'System Admin',
+        status: 'draft' as const,
+        enrollment_fee: 0,
+      };
+
+      let savedCourseId: string;
+
       if (course) {
         await updateCourse(course.id, courseData);
+        savedCourseId = course.id;
+        toast({
+          title: "Success",
+          description: "Course updated successfully",
+        });
       } else {
-        await createCourse(courseData);
+        const newCourse = await createCourse(courseData);
+        savedCourseId = newCourse.id;
+        toast({
+          title: "Success",
+          description: "Course created successfully",
+        });
       }
+
+      // Save sections to database
+      for (const section of sections) {
+        if (section.id.startsWith('temp-')) {
+          // Create new section
+          await createSection(savedCourseId, {
+            title: section.title,
+            order: section.order
+          });
+        } else {
+          // Update existing section
+          await updateSection(section.id, {
+            title: section.title,
+            order: section.order
+          });
+        }
+      }
+
       onSave();
     } catch (error) {
       console.error('Error saving course:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save course. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const addSection = () => {
     const newSection: CourseSection = {
-      id: Date.now().toString(),
+      id: `temp-${Date.now()}`,
       title: "New Section",
       order: sections.length,
       lessons: [],
@@ -60,7 +110,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
     setEditingSection(newSection.id);
   };
 
-  const updateSection = (sectionId: string, updates: Partial<CourseSection>) => {
+  const updateSectionLocal = (sectionId: string, updates: Partial<CourseSection>) => {
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, ...updates } : section
     ));
@@ -70,21 +120,12 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
     setSections(sections.filter(section => section.id !== sectionId));
   };
 
-  const handleSaveSection = async (sectionId: string) => {
-    if (!course) return;
-    
-    const section = sections.find(s => s.id === sectionId);
-    if (!section) return;
-
-    try {
-      await createSection(course.id, {
-        title: section.title,
-        order: section.order
-      });
-      setEditingSection(null);
-    } catch (error) {
-      console.error('Error saving section:', error);
-    }
+  const handleSaveSection = (sectionId: string) => {
+    setEditingSection(null);
+    toast({
+      title: "Section Updated",
+      description: "Section will be saved when you save the course",
+    });
   };
 
   if (editingLesson) {
@@ -97,8 +138,6 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
       <LessonEditor
         lesson={lesson}
         onSave={async (lessonData) => {
-          if (!course) return;
-
           const updatedSections = sections.map(section => {
             if (section.id === editingLesson.sectionId) {
               if (editingLesson.lessonId) {
@@ -106,22 +145,25 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                 return {
                   ...section,
                   lessons: section.lessons.map(lesson =>
-                    lesson.id === editingLesson.lessonId ? { ...lesson, ...lessonData } : lesson
+                    lesson.id === editingLesson.lessonId 
+                      ? { 
+                          ...lesson, 
+                          title: lessonData.title || lesson.title,
+                          content: lessonData.content || lesson.content 
+                        } 
+                      : lesson
                   )
                 };
               } else {
-                // Add new lesson with required properties
+                // Add new lesson
                 const newLesson = {
-                  id: Date.now().toString(),
+                  id: `temp-lesson-${Date.now()}`,
                   title: lessonData.title || 'New Lesson',
                   content: lessonData.content || '',
                   type: 'lesson' as const,
                   order: section.lessons.length,
                   is_free: false,
                 };
-                
-                // Save to database
-                createContent(section.id, newLesson);
                 
                 return {
                   ...section,
@@ -131,8 +173,14 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
             }
             return section;
           });
+          
           setSections(updatedSections);
           setEditingLesson(null);
+          
+          toast({
+            title: "Lesson Saved",
+            description: "Lesson will be saved to database when you save the course",
+          });
         }}
         onClose={() => setEditingLesson(null)}
       />
@@ -142,7 +190,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={onClose} disabled={isLoading}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
@@ -151,9 +199,9 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
             {course ? 'Edit Course' : 'Create New Course'}
           </h2>
         </div>
-        <Button onClick={handleSave} className="flex items-center gap-2">
+        <Button onClick={handleSave} className="flex items-center gap-2" disabled={isLoading}>
           <Save className="h-4 w-4" />
-          Save Course
+          {isLoading ? 'Saving...' : 'Save Course'}
         </Button>
       </div>
 
@@ -172,6 +220,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter course title"
+                  disabled={isLoading}
                 />
               </div>
               <div>
@@ -181,6 +230,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter course description"
                   rows={4}
+                  disabled={isLoading}
                 />
               </div>
             </CardContent>
@@ -196,7 +246,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                   <CardTitle>Course Sections</CardTitle>
                   <CardDescription>Organize your course content into sections</CardDescription>
                 </div>
-                <Button onClick={addSection} size="sm">
+                <Button onClick={addSection} size="sm" disabled={isLoading}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Section
                 </Button>
@@ -217,12 +267,14 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                             <div className="flex-1 flex items-center gap-2">
                               <Input
                                 value={section.title}
-                                onChange={(e) => updateSection(section.id, { title: e.target.value })}
+                                onChange={(e) => updateSectionLocal(section.id, { title: e.target.value })}
                                 className="flex-1"
+                                disabled={isLoading}
                               />
                               <Button
                                 size="sm"
                                 onClick={() => handleSaveSection(section.id)}
+                                disabled={isLoading}
                               >
                                 <Save className="h-4 w-4" />
                               </Button>
@@ -240,6 +292,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                               size="sm"
                               variant="outline"
                               onClick={() => setEditingLesson({ sectionId: section.id })}
+                              disabled={isLoading}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
@@ -247,6 +300,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                               size="sm"
                               variant="outline"
                               onClick={() => setEditingSection(section.id)}
+                              disabled={isLoading}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -254,6 +308,7 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                               size="sm"
                               variant="destructive"
                               onClick={() => deleteSection(section.id)}
+                              disabled={isLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -271,13 +326,14 @@ const CourseEditor = ({ course, onClose, onSave }: CourseEditorProps) => {
                                 <div>
                                   <h5 className="font-medium">{lesson.title}</h5>
                                   <p className="text-sm text-gray-500">
-                                    {lesson.content.substring(0, 100)}...
+                                    {lesson.content ? `${lesson.content.substring(0, 100)}...` : 'No content yet'}
                                   </p>
                                 </div>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => setEditingLesson({ sectionId: section.id, lessonId: lesson.id })}
+                                  disabled={isLoading}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>

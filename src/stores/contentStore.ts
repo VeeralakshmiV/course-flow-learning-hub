@@ -6,7 +6,7 @@ import { CourseContent, QuizQuestion } from '@/types/courseTypes';
 interface ContentState {
   content: Record<string, CourseContent[]>;
   quizQuestions: Record<string, QuizQuestion[]>;
-  createContent: (sectionId: string, content: Omit<CourseContent, 'id'>) => Promise<void>;
+  createContent: (sectionId: string, content: Omit<CourseContent, 'id'>) => Promise<CourseContent>;
   updateContent: (id: string, updates: Partial<CourseContent>) => Promise<void>;
   deleteContent: (id: string) => Promise<void>;
   createQuizQuestion: (contentId: string, question: Omit<QuizQuestion, 'id'>) => Promise<void>;
@@ -30,6 +30,8 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
   createContent: async (sectionId, contentData) => {
     try {
+      console.log('Creating content for section:', sectionId, contentData);
+      
       const { data, error } = await supabase
         .from('course_content')
         .insert({
@@ -42,7 +44,12 @@ export const useContentStore = create<ContentState>((set, get) => ({
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating content:', error);
+        throw error;
+      }
+
+      console.log('Content created successfully:', data);
 
       const newContent: CourseContent = {
         id: data.id,
@@ -59,6 +66,8 @@ export const useContentStore = create<ContentState>((set, get) => ({
           [sectionId]: [...(state.content[sectionId] || []), newContent]
         }
       }));
+
+      return newContent;
     } catch (error) {
       console.error('Error creating content:', error);
       throw error;
@@ -67,6 +76,8 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
   updateContent: async (id, updates) => {
     try {
+      console.log('Updating content:', id, updates);
+      
       const { error } = await supabase
         .from('course_content')
         .update({
@@ -77,7 +88,12 @@ export const useContentStore = create<ContentState>((set, get) => ({
         })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating content:', error);
+        throw error;
+      }
+
+      console.log('Content updated successfully');
     } catch (error) {
       console.error('Error updating content:', error);
       throw error;
@@ -86,22 +102,30 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
   deleteContent: async (id) => {
     try {
+      console.log('Deleting content:', id);
+      
       const { error } = await supabase
         .from('course_content')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting content:', error);
+        throw error;
+      }
+
+      console.log('Content deleted successfully');
     } catch (error) {
       console.error('Error deleting content:', error);
       throw error;
     }
   },
 
-  // Quiz question actions (placeholder implementations)
+  // Quiz question actions (implemented for future use)
   createQuizQuestion: async (contentId, questionData) => {
     try {
-      console.log('Quiz question creation will be implemented after database migration');
+      console.log('Quiz question creation - to be implemented with quiz table');
+      // This will be implemented when quiz questions table is added
     } catch (error) {
       console.error('Error creating quiz question:', error);
       throw error;
@@ -110,7 +134,8 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
   updateQuizQuestion: async (id, updates) => {
     try {
-      console.log('Quiz question update will be implemented after database migration');
+      console.log('Quiz question update - to be implemented with quiz table');
+      // This will be implemented when quiz questions table is added
     } catch (error) {
       console.error('Error updating quiz question:', error);
       throw error;
@@ -119,7 +144,8 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
   deleteQuizQuestion: async (id) => {
     try {
-      console.log('Quiz question deletion will be implemented after database migration');
+      console.log('Quiz question deletion - to be implemented with quiz table');
+      // This will be implemented when quiz questions table is added
     } catch (error) {
       console.error('Error deleting quiz question:', error);
       throw error;
