@@ -33,9 +33,11 @@ const QuizEditor = ({ quiz, onSave, onClose }: QuizEditorProps) => {
     const newQuestion: QuizQuestion = {
       id: Date.now().toString(),
       question: "",
+      type: "multiple_choice",
       options: ["", "", "", ""],
       correctAnswer: 0,
       explanation: "",
+      points: 1,
     };
     setQuestions([...questions, newQuestion]);
   };
